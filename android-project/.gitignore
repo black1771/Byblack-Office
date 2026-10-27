@@ -1,0 +1,13 @@
+*.apk
+*.jar
+*.dex
+*.class
+*.keystore
+*.jks
+*.pem
+*.key
+*.env
+local.properties
+build/
+build-*/
+.gradle/
