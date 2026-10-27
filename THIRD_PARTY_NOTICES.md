@@ -43,3 +43,17 @@ This page links to the official license; it does **not** replace any license/NOT
 **Do not equate missing embedded notices with license-free software. Do not treat these upstream references as proof that the local JARs are byte-identical to published artifacts.**
 
 **TR:** Bu kayıtlar kaynak tespitidir; APK'nın tüm telif koşullarına uyduğuna dair onay değildir. Eksik lisans metinleri doğrulanıp APK'ya dahil edilmelidir.
+
+## Local artifact fingerprints / Yerel dosya parmak izleri (2026-10-27)
+
+These hashes were provided from the Termux development environment; they have **not** been independently compared to official published artifacts.
+
+| Local JAR | SHA-256 |
+|---|---|
+| `SparseBitSet-1.3.jar` | `f76b85adb0c00721ae267b7cfde4da7f71d3121cc2160c9fc00c0c89f8c53c8a` |
+| `curvesapi-1.08.jar` | `ad95b08b8bbf9d7d17e5e00814898fa23324f32bc5b62f1a37801e6a56ce0079` |
+| `pdfbox-classes.jar` | `35f592ed840ec0903546b086e6181589796edcf0a142e2a5d5f3a3cf1e74739c` |
+
+The local PDFBox JAR contains `com/tom_roush/pdfbox`, `com/tom_roush/fontbox` and `com/tom_roush/harmony` packages. Its manifest did not reveal a version. **License coverage for all bundled classes, including Harmony-derived classes, requires verification.**
+
+**TR:** SHA-256 değerleri yerel Termux çıktısından alınmıştır; resmî dağıtımlarla henüz eşleştirilmedi. PDFBox paketinde Harmony sınıfları da bulunduğundan tüm bileşenlerin lisans bildirimleri ayrıca incelenmelidir.
