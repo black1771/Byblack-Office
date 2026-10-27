@@ -37,6 +37,12 @@ javac -source 8 -target 8 -cp "$CP" -d "$OUT/classes" @"$OUT/sources.txt"
 find "$OUT/classes" -name '*.class' > "$OUT/classes.txt"
 java -Xmx2g -cp "$BT/lib/d8.jar" com.android.tools.r8.D8 --min-api 26 --lib "$ANDROID_JAR" --output "$OUT/dex" "$@" @"$OUT/classes.txt"
 bash "$ROOT/scripts/collect-licenses.sh" "$OUT/third-party-licenses"
+# Include only separately downloaded legal documents after local inspection.
+if [ -d "$ROOT/third-party-licenses" ]; then
+  find "$ROOT/third-party-licenses" -maxdepth 1 -type f \
+    \( -iname "*LICENSE*" -o -iname "*NOTICE*" -o -iname "*COPYING*" \) \
+    -exec cp {} "$OUT/third-party-licenses/" \;
+fi
 python - "$OUT" "$LIB" "$ROOT/app/assets" "$OUT/third-party-licenses" <<'PY'
 import sys,zipfile,glob,os
 out,lib,assets,legal=sys.argv[1:]
