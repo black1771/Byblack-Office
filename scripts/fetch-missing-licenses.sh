@@ -30,5 +30,17 @@ for name in LICENSE.txt NOTICE.txt; do
    -o "$DEST/PdfBox-Android-2.0.27.0__$name"
   test -s "$DEST/PdfBox-Android-2.0.27.0__$name"
 done
+
+echo "Fetching upstream license texts:"
+curl --fail --location --retry 2 --silent --show-error \
+ "https://raw.githubusercontent.com/brettwooldridge/SparseBitSet/master/LICENSE" \
+ -o "$DEST/SparseBitSet-1.3__LICENSE"
+curl --fail --location --retry 2 --silent --show-error \
+ "https://raw.githubusercontent.com/virtuald/curvesapi/master/license.txt" \
+ -o "$DEST/curvesapi-1.08__LICENSE.txt"
+test -s "$DEST/SparseBitSet-1.3__LICENSE"
+test -s "$DEST/curvesapi-1.08__LICENSE.txt"
+echo "Note: CurvesAPI includes Apache Harmony-derived Crossing.java; inspect its copyright header separately."
+
 echo "Downloaded legal materials into $DEST"
 echo "Review the full licenses, copyright notices and transitive dependencies before publishing."
