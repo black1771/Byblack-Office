@@ -36,9 +36,10 @@ find "$ROOT/app/src" -name '*.java' > "$OUT/sources.txt"
 javac -source 8 -target 8 -cp "$CP" -d "$OUT/classes" @"$OUT/sources.txt"
 find "$OUT/classes" -name '*.class' > "$OUT/classes.txt"
 java -Xmx2g -cp "$BT/lib/d8.jar" com.android.tools.r8.D8 --min-api 26 --lib "$ANDROID_JAR" --output "$OUT/dex" "$@" @"$OUT/classes.txt"
-python - "$OUT" "$LIB" "$ROOT/app/assets" <<'PY'
+bash "$ROOT/scripts/collect-licenses.sh" "$OUT/third-party-licenses"
+python - "$OUT" "$LIB" "$ROOT/app/assets" "$OUT/third-party-licenses" <<'PY'
 import sys,zipfile,glob,os
-out,lib,assets=sys.argv[1:]
+out,lib,assets,legal=sys.argv[1:]
 seen=set()
 with zipfile.ZipFile(out+'/resources.apk') as src,zipfile.ZipFile(out+'/unsigned.apk','w') as dst:
  for item in src.infolist():
@@ -54,6 +55,10 @@ with zipfile.ZipFile(out+'/resources.apk') as src,zipfile.ZipFile(out+'/unsigned
  for path in glob.glob(assets+'/**/*',recursive=True):
   if not os.path.isfile(path):continue
   name='assets/'+os.path.relpath(path,assets).replace(os.sep,'/')
+  if name not in seen:dst.write(path,name);seen.add(name)
+ for path in glob.glob(legal+'/**/*',recursive=True):
+  if not os.path.isfile(path):continue
+  name='assets/third-party-licenses/'+os.path.relpath(path,legal).replace(os.sep,'/')
   if name not in seen:dst.write(path,name);seen.add(name)
 PY
 KEY="$HOME/.android/debug.keystore"
