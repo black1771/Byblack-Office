@@ -216,11 +216,63 @@ public class MainActivity extends Activity {
     15,0xffa7b9d5));
   }
 
+  android.widget.Button licenses=v51Button(v5Text("Açık Kaynak Lisansları","Open Source Licenses"));
+  licenses.setOnClickListener(v->v54ShowLicenses());
+  root.addView(licenses);
+
   output=v52text("",14,0xffcbd5e1);
   output.setPadding(0,v52dp(18),0,0);
   root.addView(output);
 
   setContentView(scroll);
+ }
+
+ // BYBLACK_V54_OPEN_SOURCE_LICENSES
+ private void v54ShowLicenses(){
+  final String folder="third-party-licenses";
+  try{
+   String[] entries=getAssets().list(folder);
+   if(entries==null||entries.length==0){
+    new android.app.AlertDialog.Builder(this)
+     .setMessage(v5Text("Lisans dosyaları bulunamadı.","License files not found."))
+     .setPositiveButton("OK",null).show();
+    return;
+   }
+   java.util.Arrays.sort(entries);
+   final String[] names=entries;
+   new android.app.AlertDialog.Builder(this)
+    .setTitle(v5Text("Açık Kaynak Lisansları","Open Source Licenses"))
+    .setItems(names,(dialog,which)->v54ReadLicense(folder+"/"+names[which],names[which]))
+    .setNegativeButton(v5Text("Kapat","Close"),null)
+    .show();
+  }catch(Exception e){
+   android.widget.Toast.makeText(this,e.toString(),android.widget.Toast.LENGTH_LONG).show();
+  }
+ }
+
+ private void v54ReadLicense(String assetPath,String name){
+  try(java.io.InputStream in=getAssets().open(assetPath);
+      java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream()){
+   byte[] buf=new byte[8192];int n;
+   while((n=in.read(buf))!=-1){
+    out.write(buf,0,n);
+    if(out.size()>1024*1024)throw new java.io.IOException("License file exceeds 1MB");
+   }
+   String content=new String(out.toByteArray(),java.nio.charset.StandardCharsets.UTF_8);
+   android.widget.ScrollView scroll=new android.widget.ScrollView(this);
+   android.widget.TextView text=new android.widget.TextView(this);
+   text.setText(content);
+   text.setTextSize(13);
+   text.setTextIsSelectable(true);
+   text.setPadding(v52dp(16),v52dp(16),v52dp(16),v52dp(16));
+   scroll.addView(text);
+   new android.app.AlertDialog.Builder(this)
+    .setTitle(name).setView(scroll)
+    .setPositiveButton(v5Text("Kapat","Close"),null).show();
+  }catch(Exception e){
+   new android.app.AlertDialog.Builder(this).setTitle(name)
+    .setMessage(e.toString()).setPositiveButton("OK",null).show();
+  }
  }
 
  private void v51Load(android.net.Uri uri){
