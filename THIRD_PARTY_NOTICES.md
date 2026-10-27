@@ -65,3 +65,15 @@ The local PDFBox JAR contains `com/tom_roush/pdfbox`, `com/tom_roush/fontbox` an
 - **PdfBox-Android:** The upstream repository includes `LICENSE.txt` and `NOTICE.txt`, but the local `pdfbox-classes.jar` version remains unidentified. [Upstream repository](https://github.com/TomRoush/PdfBox-Android).
 
 **Release gate / Yayın koşulu:** Do not mark the license review complete or publish a new cleared release until required full license/copyright/NOTICE texts have been collected, reviewed and included for every distributed component, including repackaged sources and assets.
+
+## Confirmed local PDFBox binary match / PDFBox yerel ikili eşleşmesi
+
+Termux verification confirmed that `office-engines/pdfbox-android-2.0.27.0.aar` contains a `classes.jar` **byte-for-byte identical** to `pdf-engine-test/pdfbox-classes.jar`:
+
+- Both SHA-256: `35f592ed840ec0903546b086e6181589796edcf0a142e2a5d5f3a3cf1e74739c`
+- Both contain **902 .class files**
+- Missing or extra classes: **0**
+- The AAR filename identifies the **candidate upstream version 2.0.27.0**. The AAR's provenance from the official publisher still needs verification.
+- No LICENSE/NOTICE entry was detected in the AAR during this check. **Correct license and notice text must still be collected and included in the distributed APK.**
+
+**TR:** PDFBox JAR, yerel `pdfbox-android-2.0.27.0.aar` içindeki `classes.jar` ile bayt düzeyinde aynıdır. Bu eşleşme lisans yükümlülüklerinin tamamlandığı anlamına gelmez.
