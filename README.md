@@ -1,73 +1,81 @@
-# BYBLACK Office — Android Office Project
+# BYBLACK Office — Android Office Projesi
 
-**TR:** BYBLACK Office, Android telefon üzerinde **Termux** kullanılarak geliştirilen, belge açma ve düzenleme özellikleri hedefleyen deneysel bir Office uygulamasıdır. Proje halen **V5.3 Beta** aşamasındadır. Geliştirmeye katkıda bulunmak isteyen herkesi test etmeye ve geri bildirim paylaşmaya davet ediyoruz.
+**🇹🇷 [Türkçe](README.md) | 🇬🇧 [English](README_EN.md)**
 
-**EN:** BYBLACK Office is an experimental Android document app built on a phone using **Termux**. Version **V5.3 Beta** is available for testing. Contributors and testers are welcome!
+BYBLACK Office, doğrudan Android telefon üzerinde **Termux**, Java ve Android SDK kullanılarak geliştirilen deneysel bir belge uygulamasıdır. Amacımız, topluluk katkısıyla kullanışlı bir belge görüntüleyici ve düzenleyici geliştirmek.
 
-## 📥 İndir / Download
+**Güncel sürüm: V5.3 Beta.** Bu proje geliştirme aşamasındadır; yerleşik Office uygulamalarının tüm özelliklerini sunduğu iddia edilmemektedir.
 
-**[BYBLACK Office V5.3 Beta APK](https://github.com/black1771/Byblack-Office/releases/tag/v5.3-beta)**
+## 📥 İndir ve kur
 
-GitHub Releases sayfasında **Assets** bölümünden APK'yı indirip Android cihazına kurabilirsin. Bilinmeyen kaynaklardan yükleme izni gerekebilir. Yalnızca güvendiğin dosyaları yükle; önemli belgelerinin yedeğini al.
+**[BYBLACK Office V5.3 Beta APK indir](https://github.com/black1771/Byblack-Office/releases/tag/v5.3-beta)**
 
-## 📱 Ekran görüntüsü / Screenshot
+GitHub sürüm sayfasında **Assets** bölümünden APK'yı indirip Android telefonunda aç. Android, ilgili uygulama için yükleme izni isteyebilir. Yalnızca güvendiğin yazılımları kur; önemli belgelerini test etmeden önce yedekle.
+
+## 📱 Ekran görüntüsü
 
 ![BYBLACK Office ana ekranı](docs/screenshots/Screenshot_20261027_170222.jpg)
 
 ## 🛠️ Baştan sona neler yaptık?
 
-1. **Android üzerinde geliştirme ortamı:** Termux, Java, Android SDK ve Gradle kullanmadan APK oluşturma yaklaşımıyla başladık.
-2. **Belge motorları:** Excel için Apache POI, PDF metin işlemleri için PDFBox ve Android'in PDF sayfa görüntüleme altyapısı üzerinde çalıştık.
-3. **Excel okuma sorunu:** Android'de XMLBeans kaynaklarının yüklenmesiyle ilgili hataları inceleyip uygulama paketindeki gerekli kaynakları düzenledik.
-4. **Excel arayüzü:** Hücreleri tablo olarak gösterme, hücre seçme ve düzenleme alanı ekledik. Kaydetme ve farklı dosyalarda yeniden açma testleri sürüyor.
-5. **Uygulama arayüzü:** Word, Excel, PowerPoint ve PDF bölümleri, son açılan dosya alanı, Türkçe/İngilizce seçeneği ve özel BYBLACK simgesi üzerinde çalıştık.
-6. **PDF V5.3:** PDF sayfalarını gerçek sayfa görünümünde açma, üzerine yazı ekleme ve yeni PDF olarak kaydetme işlevleri için kod ekledik. Farklı PDF dosyalarıyla uçtan uca doğrulama henüz tamamlanmadı.
-7. **ARM64 derleme sorunu:** Masaüstü x86_64 `aapt2` aracının Termux/ARM64 üzerinde çalışmaması sorununu, Termux uyumlu `aapt2` kullanarak aştık.
-8. **GitHub yayını:** Java kaynaklarını, manifesti, simge kaynağını, ekran görüntüsünü, kurulum açıklamalarını ve V5.3 Beta APK'sını yayımladık.
-9. **Kaynak koddan APK testi:** GitHub deposu telefonda klonlandı; yerel bağımlılıklarla yaklaşık **31 MB** APK oluşturuldu ve uygulamanın açıldığı doğrulandı.
+1. **Telefon üzerinde geliştirme:** Termux içinde Java, Android SDK ve APK paketleme araçlarıyla Gradle kullanmadan derleme altyapısı oluşturduk.
+2. **Belge motorları:** Excel için Apache POI; PDF için PDFBox ve Android'in PDF görüntüleme altyapısını kullandık.
+3. **Excel açma sorunları:** Android'de XMLBeans kaynaklarının yüklenmesiyle ilgili hataları araştırıp gerekli kaynakları APK içine ekledik.
+4. **Excel düzenleme:** Tablo görünümü, hücre seçme ve hücre değerini değiştirme alanı ekledik. Kaydetme ve yeniden açma işlemleri için daha kapsamlı test gerekiyor.
+5. **Arayüz:** Word, Excel, PowerPoint ve PDF bölümleri, son dosyalar, Türkçe/İngilizce seçimi ve özel BYBLACK simgesi üzerinde çalıştık.
+6. **PDF V5.3:** Gerçek PDF sayfa görüntüleme, üzerine yazı ekleme ve yeni PDF olarak kaydetme kodlarını ekledik. Farklı PDF'lerle uçtan uca testler henüz tamamlanmadı.
+7. **ARM64 hatasının çözümü:** Masaüstü x86_64 `aapt2` aracının ARM64 telefonda çalışmaması sorununu Termux uyumlu `aapt2` kullanarak çözdük.
+8. **GitHub yayını:** Java kaynaklarını, manifesti, ikon kaynağını, ekran görüntüsünü, kurulum belgelerini ve V5.3 Beta APK'sını yayımladık.
+9. **GitHub kodundan APK:** Depoyu telefona klonlayıp mevcut bağımlılıklarla yaklaşık **31 MB** APK oluşturduk ve uygulamanın açıldığını doğruladık.
 
-## 🧪 Durum / Test status
+## 🧪 Özellik ve test durumu
 
 | Özellik | Durum |
 |---|---|
-| Termux ARM64 üzerinde yerel kaynak derleme | Başarılı (geliştirme cihazında) |
-| Derlenen APK'nın açılması | Başarılı (geliştirme cihazında) |
-| Excel hücre değerinin ekranda değiştirilmesi | Önceki sürümde gözlemlendi |
-| Excel dosyasının kaydedilip yeniden açılması | Daha fazla test gerekli |
-| PDF sayfa görüntüleme | Kod eklendi; farklı dosyalarla test gerekli |
-| PDF üzerine yazı ekleme ve kaydetme | Kod eklendi; uçtan uca test gerekli |
-| Word / PowerPoint tam düzenleme | Henüz desteklendiği doğrulanmadı |
-| Temiz Termux kurulumunda sıfırdan derleme | Henüz doğrulanmadı |
+| Termux ARM64 yerel APK derleme | Geliştirme telefonunda başarılı |
+| Derlenen APK'nın açılması | Doğrulandı |
+| Excel hücre değerini ekranda değiştirme | Önceki sürümde gözlemlendi |
+| Excel dosyasını kaydedip yeniden açma | Ek test gerekiyor |
+| PDF sayfalarını görüntüleme | Kod eklendi; kapsamlı test gerekiyor |
+| PDF üzerine yazı ekleyip kaydetme | Kod eklendi; uçtan uca test gerekiyor |
+| Word / PowerPoint tam düzenleme | Doğrulanmadı / vaat edilmiyor |
+| Temiz Termux ortamında sıfırdan derleme | Henüz doğrulanmadı |
 
-**Önemli:** Bu bir beta sürümdür; profesyonel Office uygulamalarının tüm özelliklerini sunduğu iddia edilmemektedir. PDF'nin görüntü olarak yeniden kaydedilmesi seçilebilir metin, bağlantı, form veya dijital imzaları kaybettirebilir.
+**Beta uyarısı:** PDF kaydetme sırasında sayfalar görüntüye dönüştürülebilir; seçilebilir metinler, bağlantılar, formlar ve dijital imzalar kaybolabilir. Önemli belgelerinin tek kopyası üzerinde deneme yapma.
 
-## 🤝 Geliştiricilere ve kullanıcılara çağrı
+## 🤝 BYBLACK Office'i birlikte geliştirelim!
 
-**BYBLACK Office'i indirip deneyin ve birlikte geliştirelim!**
+**Uygulamayı indiren kullanıcıların ve dünyanın her yerinden geliştiricilerin katkısını bekliyoruz.**
 
-- Uygulamayı kurup farklı Android sürümlerinde test edin.
-- PDF/Excel açma, düzenleme ve kaydetme sorunlarını örnek adımlarla bildirin.
-- Arayüz, performans, erişilebilirlik ve TR/EN çeviriler için öneri paylaşın.
-- Android, Java, Termux, PDF ve Excel alanlarında katkı sağlayabiliyorsanız çözüm önerileri veya pull request gönderin.
-- Sorun bildirirken cihaz modeli, Android sürümü, uygulama sürümü, beklenen/gerçekleşen davranış ve mümkünse kişisel bilgi içermeyen ekran görüntüsü ekleyin.
+- APK'yı farklı Android telefonlarda kurup test edin.
+- PDF ve Excel açma, düzenleme, kaydetme ve yeniden açma hatalarını bildirin.
+- Performans, tasarım, erişilebilirlik ve çeviri önerilerinizi paylaşın.
+- Java/Android, Termux, PDF veya Excel alanlarında bilgi sahibiyseniz sorunlara çözüm ve pull request gönderin.
+- Hata bildirirken cihaz modeli, Android sürümü, uygulama sürümü, yeniden oluşturma adımları, beklenen ve gerçekleşen sonucu yazın. Özel bilgileri ekran görüntülerinden çıkarın.
 
-**[Hata bildir / Report an issue](https://github.com/black1771/Byblack-Office/issues/new)** · **[Kaynak kod / Source](https://github.com/black1771/Byblack-Office)**
+**[Hata bildir veya geliştirme öner](https://github.com/black1771/Byblack-Office/issues/new)**
 
-## 🔧 Kaynaktan derleme
+## 🔧 Kaynak koddan derleme
 
 [Kurulum ve derleme rehberi](INSTALL.md) · [Termux yerel derleme betiği](scripts/build-termux-local.sh)
 
-Derleme betiği geliştirme telefonundaki önceden hazırlanmış Android SDK ve bağımlılıkları kullanır. **Temiz bir Termux ortamında tek komutla kurulumu henüz sağlamaz.** Bu da katkıya açık öncelikli işlerden biridir.
+Mevcut betik, geliştirme telefonunda önceden kurulmuş Android SDK ve JAR bağımlılıklarını kullanır. **Henüz temiz bir Termux ortamında tek komutla derleme sağlamaz.** Bunu tamamlamak katkıya açık önceliklerimizden biridir.
 
-## 🗺️ Sonraki hedefler
+## 🗺️ Yol haritası
 
-PDF kaydetme/doğrulama testleri; Excel biçimlendirme ve güvenilir kaydetme; Word/PowerPoint desteğinin iyileştirilmesi; daha iyi arayüz; bağımlılıkların otomatik kurulumu; testler ve tekrarlanabilir derleme.
+- PDF üzerine yazı ekleme, kaydetme ve yeniden açmayı doğrulama
+- Excel biçimlendirme ve güvenilir kaydetme
+- Word / PowerPoint desteğini geliştirme
+- Arayüz ve çevirileri iyileştirme
+- Bağımlılık kurulumunu otomatikleştirme ve regresyon testleri
+- Temiz Termux kurulumundan tekrarlanabilir APK derleme
 
-## 📜 Lisans
+## 📜 Lisans ve katkılar
 
-Proje kodu ve üçüncü taraf bağımlılıklarının lisans değerlendirmesi henüz tamamlanmadı. **Şu an bir açık kaynak lisansı verilmemiştir.** Kaynakların GitHub'da görünür olması otomatik olarak yeniden kullanım veya dağıtım izni vermez. Katkı yapmadan önce bu durumu dikkate alın.
+Proje kodunun ve üçüncü taraf bağımlılıkların lisans değerlendirmesi henüz tamamlanmadı. **Şu anda açık kaynak lisansı verilmiş değildir.** Kodun GitHub'da görünmesi tek başına yeniden kullanım veya dağıtım izni sağlamaz. Kapsamlı katkılardan önce lisans konusunu bir issue üzerinden görüşebilirsiniz.
 
 ---
 
-**BYBLACK Office — Developed on Android with Termux.**  
-GitHub: [@black1771](https://github.com/black1771)
+**BYBLACK Office — Android üzerinde Termux ile geliştirildi.**
+
+Geliştirici: [@black1771](https://github.com/black1771). Test, öneri ve katkılara açığız.
