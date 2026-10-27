@@ -57,3 +57,11 @@ These hashes were provided from the Termux development environment; they have **
 The local PDFBox JAR contains `com/tom_roush/pdfbox`, `com/tom_roush/fontbox` and `com/tom_roush/harmony` packages. Its manifest did not reveal a version. **License coverage for all bundled classes, including Harmony-derived classes, requires verification.**
 
 **TR:** SHA-256 değerleri yerel Termux çıktısından alınmıştır; resmî dağıtımlarla henüz eşleştirilmedi. PDFBox paketinde Harmony sınıfları da bulunduğundan tüm bileşenlerin lisans bildirimleri ayrıca incelenmelidir.
+
+## Additional artifact identification / Ek dosya doğrulaması
+
+- **SparseBitSet 1.3:** The locally reported SHA-256 `f76b85adb0c00721ae267b7cfde4da7f71d3121cc2160c9fc00c0c89f8c53c8a` also appears in an independent published dependency-check report for `com.zaxxer:SparseBitSet:1.3`. [Independent checksum evidence](https://download.grif.totalenergies.com/COM/GRIF2026/GRIF2026.4/dependency-check-report.html). This strengthens artifact identification but does not substitute for license text.
+- **CurvesAPI 1.08:** The upstream project describes a BSD-licensed main library and an Apache-2.0-derived `Crossing.java` from Apache Harmony. **Both** attribution sets must be considered. [Upstream project information](https://explore.market.dev/ecosystems/java/projects/curvesapi).
+- **PdfBox-Android:** The upstream repository includes `LICENSE.txt` and `NOTICE.txt`, but the local `pdfbox-classes.jar` version remains unidentified. [Upstream repository](https://github.com/TomRoush/PdfBox-Android).
+
+**Release gate / Yayın koşulu:** Do not mark the license review complete or publish a new cleared release until required full license/copyright/NOTICE texts have been collected, reviewed and included for every distributed component, including repackaged sources and assets.
