@@ -31,3 +31,15 @@ This page links to the official license; it does **not** replace any license/NOT
 ## Current risk / Mevcut risk
 
 **Not yet cleared for compliance.** The public V5.3 Beta APK was published before a complete third-party inventory and license/NOTICE packaging audit. Review and remedy the distribution promptly; if required notices cannot be verified, consider temporarily unpublishing the binary while auditing. / V5.3 Beta APK, eksiksiz üçüncü taraf envanteri ve lisans/NOTICE denetimi tamamlanmadan yayımlandı. İncelemeyi hızla tamamlayın; zorunlu bildirimler doğrulanamıyorsa inceleme sırasında APK'yı geçici olarak yayından kaldırmayı değerlendirin.
+
+## Verified upstream references for missing embedded notices / Eksik gömülü bildirimler için kaynaklar
+
+| Local file | Upstream metadata | Remaining action |
+|---|---|---|
+| `SparseBitSet-1.3.jar` | [Maven Central com.zaxxer:SparseBitSet:1.3](https://central.sonatype.com/artifact/com.zaxxer/SparseBitSet/1.3), Apache-2.0 | Obtain the matching distribution's complete LICENSE/NOTICE obligations; compare JAR hashes. |
+| `curvesapi-1.08.jar` | [Maven Central com.github.virtuald:curvesapi:1.08](https://central.sonatype.com/artifact/com.github.virtuald/curvesapi), BSD 3-Clause reported | Obtain exact upstream copyright and BSD license text, preserve redistribution notices, compare JAR hashes. |
+| `pdfbox-classes.jar` | [TomRoush/PdfBox-Android](https://github.com/TomRoush/PdfBox-Android), Apache-2.0 for main code | **Local repackaged JAR: provenance/version/content not yet established.** Inspect manifest, classes, bundled assets and upstream notices before claiming clearance. |
+
+**Do not equate missing embedded notices with license-free software. Do not treat these upstream references as proof that the local JARs are byte-identical to published artifacts.**
+
+**TR:** Bu kayıtlar kaynak tespitidir; APK'nın tüm telif koşullarına uyduğuna dair onay değildir. Eksik lisans metinleri doğrulanıp APK'ya dahil edilmelidir.
