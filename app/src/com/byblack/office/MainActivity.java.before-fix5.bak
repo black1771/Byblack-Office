@@ -1,0 +1,273 @@
+package com.byblack.office;
+
+import android.app.*;
+import android.os.*;
+import android.content.*;
+import android.net.Uri;
+import android.view.*;
+import android.widget.*;
+import java.io.*;
+import java.util.*;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.xwpf.usermodel.*;
+import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.xslf.usermodel.*;
+import org.apache.poi.hslf.usermodel.*;
+import org.apache.poi.sl.usermodel.*;
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.text.PDFTextStripper;
+
+public class MainActivity extends Activity {
+ TextView output;
+ LinearLayout root;
+ static final int PICK=100;
+ final int LIMIT=150000;
+
+ public void onCreate(Bundle b) {
+  super.onCreate(b);
+  home();
+ }
+
+ void home() {
+  root=new LinearLayout(this);
+  root.setOrientation(1);
+  root.setPadding(18,18,18,18);
+  root.setBackgroundColor(0xfff5f7fa);
+
+  TextView title=new TextView(this);
+  title.setText("BYBLACK OFFICE V3");
+  title.setTextSize(24);
+  title.setTextColor(0xff102b49);
+  root.addView(title);
+
+  Button open=new Button(this);
+  open.setText("DOSYA AC");
+  root.addView(open);
+  Button testBundle=new Button(this);
+  testBundle.setText("XMLBEANS MOTOR TEST");
+  root.addView(testBundle);
+
+  testBundle.setOnClickListener(v->{
+   try {
+    java.util.ResourceBundle bundle=
+     java.util.ResourceBundle.getBundle(
+      "org.apache.xmlbeans.impl.regex.message",
+      java.util.Locale.getDefault());
+
+    output.setText(
+     "XMLBEANS BUNDLE BASARILI\n"+
+     "Anahtar sayisi: "+bundle.keySet().size());
+
+   }catch(Throwable e){
+    output.setText(
+     "XMLBEANS BUNDLE HATASI:\n"+e);
+   }
+  });
+
+
+  open.setOnClickListener(v->{
+   Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+   i.setType("*/*");
+   i.addCategory(Intent.CATEGORY_OPENABLE);
+   i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+   startActivityForResult(i,PICK);
+  });
+
+  ScrollView scroll=new ScrollView(this);
+  output=new TextView(this);
+  output.setTextSize(15);
+  output.setTextColor(0xff202020);
+  output.setPadding(8,20,8,20);
+  output.setText("Word, Excel, PowerPoint veya PDF dosyasi sec.");
+  scroll.addView(output);
+  root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+  setContentView(root);
+ }
+
+ @Override
+ protected void onActivityResult(int req,int result,Intent data){
+  super.onActivityResult(req,result,data);
+  if(req!=PICK || result!=RESULT_OK || data==null)return;
+  Uri uri=data.getData();
+  if(uri==null)return;
+
+  output.setText("Dosya okunuyor...");
+  try {
+   java.io.InputStream test=getAssets().open(
+    "xmlbeans/org/apache/xmlbeans/impl/regex/message.properties");
+   java.util.Properties props=new java.util.Properties();
+   props.load(test);
+   test.close();
+   output.setText("XMLBEANS ASSET OK: "+props.size());
+  }catch(Exception ex){
+   output.setText("XMLBEANS ASSET FAIL: "+ex);
+  }
+  new Thread(()->{
+   String resultText;
+   try {
+    resultText=readDocument(uri);
+   } catch(Throwable e) {
+    StringWriter sw=new StringWriter();
+    e.printStackTrace(new PrintWriter(sw));
+    Throwable cause=e;
+    int depth=0;
+    while(cause.getCause()!=null && depth++<15){
+     cause=cause.getCause();
+    }
+    sw.append("\n===== GERCEK KOK HATA =====\n");
+    sw.append(cause.toString());
+    sw.append("\n");
+    for(StackTraceElement frame:cause.getStackTrace()){
+     sw.append(frame.toString()).append("\n");
+     if(sw.getBuffer().length()>25000)break;
+    }
+    resultText="MOTOR HATASI:\n"+sw.toString();
+   }
+   final String show=resultText;
+   runOnUiThread(()->output.setText(show));
+  }).start();
+ }
+
+ String readDocument(Uri uri)throws Exception{
+  String name="dosya";
+  try(android.database.Cursor c=getContentResolver().query(
+   uri,null,null,null,null)){
+   if(c!=null && c.moveToFirst()){
+    int ix=c.getColumnIndex(
+     android.provider.OpenableColumns.DISPLAY_NAME);
+    if(ix>=0)name=c.getString(ix);
+   }
+  }
+
+  String lower=name.toLowerCase(java.util.Locale.ROOT);
+  ByteArrayOutputStream buf=new ByteArrayOutputStream();
+  try(InputStream in=getContentResolver().openInputStream(uri)){
+   if(in==null)throw new IOException("Dosya acilamadi");
+   byte[] b=new byte[16384];
+   int n;
+   while((n=in.read(b))!=-1){
+    buf.write(b,0,n);
+    if(buf.size()>30*1024*1024)
+     throw new IOException("Dosya 30 MB sinirini asti");
+   }
+  }
+
+  byte[] bytes=buf.toByteArray();
+  String content;
+
+  if(lower.endsWith(".xlsx")){
+   try(Workbook w=new XSSFWorkbook(
+    new ByteArrayInputStream(bytes))){
+    content=spreadsheet(w);
+   }
+  }else if(lower.endsWith(".xls")){
+   try(Workbook w=new HSSFWorkbook(
+    new ByteArrayInputStream(bytes))){
+    content=spreadsheet(w);
+   }
+  }else if(lower.endsWith(".docx")){
+   try(XWPFDocument d=new XWPFDocument(
+    new ByteArrayInputStream(bytes))){
+    StringBuilder s=new StringBuilder();
+    for(XWPFParagraph p:d.getParagraphs())
+     s.append(p.getText()).append('\n');
+    for(XWPFTable t:d.getTables()){
+     for(XWPFTableRow r:t.getRows()){
+      for(XWPFTableCell c:r.getTableCells())
+       s.append(c.getText()).append(" | ");
+      s.append('\n');
+     }
+    }
+    content=s.toString();
+   }
+  }else if(lower.endsWith(".doc")){
+   try(HWPFDocument d=new HWPFDocument(
+    new ByteArrayInputStream(bytes))){
+    content=d.getRange().text();
+   }
+  }else if(lower.endsWith(".pptx")){
+   try(XMLSlideShow p=new XMLSlideShow(
+    new ByteArrayInputStream(bytes))){
+    content=slides(p.getSlides());
+   }
+  }else if(lower.endsWith(".ppt")){
+   try(HSLFSlideShow p=new HSLFSlideShow(
+    new ByteArrayInputStream(bytes))){
+    content=slides(p.getSlides());
+   }
+  }else if(lower.endsWith(".pdf")){
+   PDFBoxResourceLoader.init(getApplicationContext());
+   try(PDDocument d=PDDocument.load(bytes)){
+    PDFTextStripper stripper=new PDFTextStripper();
+    stripper.setEndPage(Math.min(30,d.getNumberOfPages()));
+    content="PDF sayfa sayisi: "+d.getNumberOfPages()+
+     "\n\n"+stripper.getText(d);
+   }
+  }else{
+   content=new String(bytes,java.nio.charset.StandardCharsets.UTF_8);
+  }
+
+  if(content.length()>LIMIT)
+   content=content.substring(0,LIMIT)+
+    "\n\n[Goruntuleme sinirina ulasildi]";
+
+  return "DOSYA: "+name+"\n\n"+content;
+ }
+
+ String spreadsheet(Workbook w){
+  StringBuilder s=new StringBuilder();
+  DataFormatter formatter=new DataFormatter();
+  FormulaEvaluator evaluator=w.getCreationHelper()
+   .createFormulaEvaluator();
+
+  for(int sh=0;sh<w.getNumberOfSheets();sh++){
+   org.apache.poi.ss.usermodel.Sheet sheet=w.getSheetAt(sh);
+   s.append("\n===== SAYFA: ")
+    .append(sheet.getSheetName())
+    .append(" =====\n");
+
+   int count=0;
+   for(Row row:sheet){
+    if(count++>=300){
+     s.append("[300 satir siniri]\n");
+     break;
+    }
+    s.append(row.getRowNum()+1).append(" | ");
+    int max=Math.min(30,Math.max(0,row.getLastCellNum()));
+    for(int col=0;col<max;col++){
+     Cell cell=row.getCell(col);
+     if(cell!=null){
+      try{
+       s.append(formatter.formatCellValue(cell,evaluator));
+      }catch(Exception e){
+       s.append(formatter.formatCellValue(cell));
+      }
+     }
+     s.append(" | ");
+    }
+    s.append('\n');
+   }
+  }
+  return s.toString();
+ }
+
+ String slides(
+  java.util.List<? extends Slide<?,?>> slideList){
+  StringBuilder s=new StringBuilder();
+  int i=0;
+  for(Slide<?,?> slide:slideList){
+   s.append("\n===== SLAYT ")
+    .append(++i).append(" =====\n");
+   for(Object shape:slide.getShapes()){
+    if(shape instanceof TextShape){
+     s.append(((TextShape<?,?>)shape).getText())
+      .append('\n');
+    }
+   }
+  }
+  return s.toString();
+ }
+}
