@@ -38,3 +38,7 @@ Tekrarlanabilir derleme betigi daha sonra eklenecektir.
 Proje ve ucuncu taraf bagimliliklarinin lisans
 incelemesi devam etmektedir. Henuz acik kaynak
 kullanim lisansi verilmemistir.
+
+## Ekran görüntüsü
+
+![BYBLACK Office ana ekranı](docs/screenshots/Screenshot_20261027_170222.jpg)
