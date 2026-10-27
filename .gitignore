@@ -11,3 +11,19 @@ local.properties
 build/
 build-*/
 .gradle/
+
+# BYBLACK Office local files
+*.apk
+*.aab
+*.jks
+*.keystore
+*.pem
+*.key
+.env
+.env.*
+local.properties
+.gradle/
+**/build/
+node_modules/
+*.zip
+*.tar.gz
