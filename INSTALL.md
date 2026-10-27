@@ -28,3 +28,16 @@ V5.3'ün cihazda kullanılan tam bağımlılık listesi ve derleme betiği doğr
 ## Durum
 
 V5.3 Beta. PDF düzenleme/kaydetme ve Excel kaydetme farklı belgelerle ayrıca doğrulanmalıdır.
+
+## Doğrulanan yerel derleme (27 Ekim 2026)
+
+Samsung ARM64 üzerinde, daha önce hazırlanmış Android SDK ve Office bağımlılıklarıyla `scripts/build-termux-local.sh` çalıştırıldı. Kullanıcı tarafından bildirilen sonuç: `build-local/BYBLACK-Office-V5.3-local.apk` (yaklaşık 31 MB), `apksigner` uyarıları dışında hata yok. Bu, APK'nin cihazda kurulup işlevlerinin test edildiği veya sıfırdan temiz Termux ortamında derlendiği anlamına gelmez.
+
+```bash
+git clone https://github.com/black1771/Byblack-Office.git
+cd Byblack-Office
+pkg install -y aapt2
+bash scripts/build-termux-local.sh
+```
+
+Derleme betiği bağımlılıkları `$HOME/ByblackOffice` ve `$HOME/android-sdk` altında bekler. Bu klasörler ve gerekli JAR'lar olmadan komut çalışmaz. Üretilen APK, yerel debug keystore ile imzalanır; GitHub Releases APK'sıyla farklı imzalıysa Android doğrudan güncellemeye izin vermez. Böyle bir durumda uygulama verilerini yedeklemeden mevcut sürümü kaldırmayın.
