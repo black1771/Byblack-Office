@@ -1,0 +1,97 @@
+name: BYBLACK Office APK packaging V5 (experimental)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-apk:
+    name: Compile, dex and package unsigned APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: ci/pom.xml
+      - name: Prepare Android SDK 34 and build-tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;34.0.0"
+          test -s "$SDK/platforms/android-34/android.jar"
+          test -f "$SDK/build-tools/34.0.0/lib/d8.jar"
+          test -x "$SDK/build-tools/34.0.0/aapt2"
+      - name: Resolve dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f ci/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory="$GITHUB_WORKSPACE/build-ci/dependencies"
+          mkdir -p build-ci/pdfbox
+          unzip -p build-ci/dependencies/pdfbox-android-2.0.27.0.aar classes.jar > build-ci/pdfbox/pdfbox-android-classes.jar
+          test -s build-ci/pdfbox/pdfbox-android-classes.jar
+      - name: Compile app sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/classes
+          CP="$ANDROID_HOME/platforms/android-34/android.jar:build-ci/pdfbox/pdfbox-android-classes.jar"
+          for jar in build-ci/dependencies/*.jar; do CP="$CP:$jar"; done
+          javac --release 8 -cp "$CP" -d build-ci/classes \
+            app/src/com/byblack/office/AssetClassLoader.java \
+            app/src/com/byblack/office/MainActivity.java
+      - name: Compile and link Android resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/flat
+          AAPT="$ANDROID_HOME/build-tools/34.0.0/aapt2"
+          "$AAPT" compile --dir app/res -o build-ci/flat
+          find build-ci/flat -type f -name '*.flat' -print0 | xargs -0 -r "$AAPT" link \
+            -I "$ANDROID_HOME/platforms/android-34/android.jar" \
+            --manifest app/AndroidManifest.xml --auto-add-overlay \
+            -o build-ci/resources.apk
+          unzip -t build-ci/resources.apk
+      - name: Convert app classes to DEX
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/dex
+          find build-ci/classes -type f -name '*.class' > build-ci/class-files.txt
+          java -cp "$ANDROID_HOME/build-tools/34.0.0/lib/d8.jar" com.android.tools.r8.D8 \
+            --min-api 26 --lib "$ANDROID_HOME/platforms/android-34/android.jar" \
+            --output build-ci/dex @build-ci/class-files.txt
+          test -s build-ci/dex/classes.dex
+      - name: Package and inspect unsigned APK structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          out=Path('build-ci/unsigned-smoke.apk')
+          with zipfile.ZipFile('build-ci/resources.apk') as src, zipfile.ZipFile(out,'w') as dst:
+              for item in src.infolist():
+                  dst.writestr(item,src.read(item.filename))
+              for dex in sorted(Path('build-ci/dex').glob('classes*.dex')):
+                  dst.write(dex,dex.name)
+          with zipfile.ZipFile(out) as apk:
+              assert apk.testzip() is None
+              assert 'AndroidManifest.xml' in apk.namelist()
+              assert 'classes.dex' in apk.namelist()
+          print('PASS: unsigned APK ZIP structure')
+          PY
+          echo "EXPERIMENTAL ONLY: dependency DEX, XMLBeans assets and legal notices are not bundled."
+          echo "Do NOT install or distribute this incomplete APK."
