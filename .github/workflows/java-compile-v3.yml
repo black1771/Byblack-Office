@@ -26,15 +26,22 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android command-line tools
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK platform 34
+      - name: Locate Android SDK and platform 34
         shell: bash
         run: |
           set -euo pipefail
-          sdkmanager --install "platforms;android-34"
-          test -f "${ANDROID_HOME}/platforms/android-34/android.jar"
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "SDK root: $SDK_ROOT"
+          if [ ! -f "$SDK_ROOT/platforms/android-34/android.jar" ]; then
+            SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+            if [ ! -x "$SDKMANAGER" ]; then
+              echo "::error::Android SDK command-line tools not present on runner"
+              exit 1
+            fi
+            "$SDKMANAGER" --install "platforms;android-34"
+          fi
+          test -s "$SDK_ROOT/platforms/android-34/android.jar"
 
       - name: Compile real BYBLACK Java class against Android SDK
         shell: bash
@@ -42,7 +49,7 @@ jobs:
           set -euo pipefail
           mkdir -p build-ci/classes
           javac --release 8 \
-            -cp "${ANDROID_HOME}/platforms/android-34/android.jar" \
+            -cp "$ANDROID_HOME/platforms/android-34/android.jar" \
             -d build-ci/classes \
             app/src/com/byblack/office/AssetClassLoader.java
           test -s build-ci/classes/com/byblack/office/AssetClassLoader.class
