@@ -1,0 +1,83 @@
+name: BYBLACK Office dependency DEX V6 (experimental)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-dex:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: ci/pom.xml
+      - name: Prepare Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;34.0.0"
+      - name: Download dependencies and extract AAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/dependencies build-ci/pdfbox
+          mvn -B -ntp -f ci/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory="$GITHUB_WORKSPACE/build-ci/dependencies"
+          unzip -p build-ci/dependencies/pdfbox-android-2.0.27.0.aar classes.jar > build-ci/pdfbox/pdfbox-android-classes.jar
+          test -s build-ci/pdfbox/pdfbox-android-classes.jar
+      - name: Compile application
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/classes
+          CP="$ANDROID_HOME/platforms/android-34/android.jar:build-ci/pdfbox/pdfbox-android-classes.jar"
+          for jar in build-ci/dependencies/*.jar; do CP="$CP:$jar"; done
+          javac --release 8 -cp "$CP" -d build-ci/classes \
+            app/src/com/byblack/office/AssetClassLoader.java \
+            app/src/com/byblack/office/MainActivity.java
+      - name: DEX app and runtime libraries together
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/dex
+          find build-ci/classes -type f -name '*.class' > build-ci/class-files.txt
+          jars=(build-ci/dependencies/*.jar build-ci/pdfbox/pdfbox-android-classes.jar)
+          java -Xmx4g -cp "$ANDROID_HOME/build-tools/34.0.0/lib/d8.jar" com.android.tools.r8.D8 \
+            --min-api 26 --lib "$ANDROID_HOME/platforms/android-34/android.jar" \
+            --output build-ci/dex @build-ci/class-files.txt "${jars[@]}"
+          test -s build-ci/dex/classes.dex
+          ls -lh build-ci/dex/classes*.dex
+      - name: Verify XMLBeans schema resources exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import glob,zipfile
+          jars=glob.glob('build-ci/dependencies/*.jar')
+          matches=[]
+          for path in jars:
+              with zipfile.ZipFile(path) as z:
+                  names=[n for n in z.namelist() if n.endswith('.xsb')]
+                  if names: matches.append((path,len(names)))
+          print('XMLBeans schema resource jars:',matches)
+          if not matches: raise SystemExit('Missing XMLBeans schema .xsb resources')
+          PY
+      - name: Scope
+        if: always()
+        run: |
+          echo "V6 validates DEX of app and Maven runtime dependencies."
+          echo "No APK is signed, uploaded, released or installed."
+          echo "This does not establish runtime compatibility or license clearance."
