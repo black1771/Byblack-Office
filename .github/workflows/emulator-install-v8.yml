@@ -1,0 +1,141 @@
+name: BYBLACK Office emulator install V8 (experimental)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emulator-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: ci/pom.xml
+      - name: Prepare SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;36.0.0"
+      - name: Resolve dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/dependencies build-ci/pdfbox
+          mvn -B -ntp -f ci/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory="$GITHUB_WORKSPACE/build-ci/dependencies"
+          unzip -p build-ci/dependencies/pdfbox-android-2.0.27.0.aar classes.jar > build-ci/pdfbox/pdfbox-android-classes.jar
+          test -s build-ci/pdfbox/pdfbox-android-classes.jar
+      - name: Compile Java and DEX all runtime libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/classes build-ci/dex
+          CP="$ANDROID_HOME/platforms/android-34/android.jar:build-ci/pdfbox/pdfbox-android-classes.jar"
+          for jar in build-ci/dependencies/*.jar; do CP="$CP:$jar"; done
+          javac --release 8 -cp "$CP" -d build-ci/classes \
+            app/src/com/byblack/office/AssetClassLoader.java \
+            app/src/com/byblack/office/MainActivity.java
+          find build-ci/classes -name '*.class' > build-ci/classes.txt
+          java -Xmx4g -cp "$ANDROID_HOME/build-tools/36.0.0/lib/d8.jar" com.android.tools.r8.D8 \
+            --min-api 26 --lib "$ANDROID_HOME/platforms/android-34/android.jar" \
+            --output build-ci/dex @build-ci/classes.txt \
+            build-ci/dependencies/*.jar build-ci/pdfbox/pdfbox-android-classes.jar
+          test -s build-ci/dex/classes.dex
+      - name: Compile and link Android resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/flat
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt2"
+          "$AAPT" compile --dir app/res -o build-ci/flat
+          find build-ci/flat -name '*.flat' -print0 | xargs -0 -r "$AAPT" link \
+            -I "$ANDROID_HOME/platforms/android-34/android.jar" \
+            --manifest app/AndroidManifest.xml --auto-add-overlay \
+            -o build-ci/resources.apk
+      - name: Package DEX, XMLBeans schemas, and app assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import glob,os,zipfile
+          from pathlib import Path
+          out=Path('build-ci/unsigned.apk')
+          seen=set()
+          with zipfile.ZipFile('build-ci/resources.apk') as src, zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED) as dst:
+              for info in src.infolist():
+                  if info.filename not in seen:
+                      dst.writestr(info.filename,src.read(info.filename));seen.add(info.filename)
+              for dex in sorted(glob.glob('build-ci/dex/classes*.dex')):
+                  name=Path(dex).name
+                  dst.write(dex,name);seen.add(name)
+              schema_count=0
+              for jar in sorted(glob.glob('build-ci/dependencies/*.jar')):
+                  with zipfile.ZipFile(jar) as z:
+                      for name in z.namelist():
+                          if not name.endswith(('.xsb','.properties')): continue
+                          target='assets/xmlbeans/'+name
+                          if target not in seen:
+                              dst.writestr(target,z.read(name));seen.add(target)
+                              if name.endswith('.xsb'): schema_count+=1
+              for file in sorted(Path('app/assets').rglob('*')):
+                  if not file.is_file(): continue
+                  target='assets/'+file.relative_to('app/assets').as_posix()
+                  if target not in seen:dst.write(file,target);seen.add(target)
+          assert schema_count>0, 'No XMLBeans schema resources packaged'
+          with zipfile.ZipFile(out) as z:
+              assert z.testzip() is None
+              assert 'AndroidManifest.xml' in z.namelist()
+              assert 'classes.dex' in z.namelist()
+          print('XMLBeans schema resources packaged:',schema_count)
+          print('Unsigned APK size:',out.stat().st_size)
+          PY
+      - name: Align and sign with ephemeral CI-only key
+        shell: bash
+        run: |
+          set -euo pipefail
+          BT="$ANDROID_HOME/build-tools/36.0.0"
+          "$BT/zipalign" -f -p 4 build-ci/unsigned.apk build-ci/aligned.apk
+          keytool -genkeypair -noprompt -keystore build-ci/ci-debug.p12 -storetype PKCS12 \
+            -storepass android -keypass android -alias ci-debug \
+            -keyalg RSA -keysize 2048 -validity 1 \
+            -dname "CN=BYBLACK CI Temporary, O=CI, C=TR"
+          "$BT/apksigner" sign --ks build-ci/ci-debug.p12 --ks-type PKCS12 \
+            --ks-key-alias ci-debug --ks-pass pass:android \
+            --out build-ci/BYBLACK-Office-V7-CI.apk build-ci/aligned.apk
+          "$BT/apksigner" verify --verbose --print-certs build-ci/BYBLACK-Office-V7-CI.apk
+          "$BT/aapt" dump badging build-ci/BYBLACK-Office-V7-CI.apk | head -n 8
+      - name: Install and launch on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            adb install -r build-ci/BYBLACK-Office-V7-CI.apk
+            adb shell am start -W -n com.byblack.office.v3/com.byblack.office.MainActivity
+            sleep 8
+            adb shell pidof com.byblack.office.v3
+            adb logcat -d -t 400 | grep -E 'FATAL EXCEPTION|com.byblack.office.v3' | tail -n 35 || true
+            echo 'PASS: emulator install, launch and process-alive smoke test'
+      - name: Safety scope
+        if: always()
+        run: |
+          echo "CI smoke test only. APK is not uploaded, released, or distributed."
+          echo "Ephemeral signing key is discarded with the job."
+          echo "Emulator install/launch only; file opening and Android 17 physical device NOT tested."\n          echo "Third-party licensing remains unverified."
