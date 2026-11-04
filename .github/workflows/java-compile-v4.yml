@@ -1,0 +1,79 @@
+name: BYBLACK Office full Java compile V4
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  main-activity-compile:
+    name: Compile BYBLACK Java sources with public dependencies
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: ci/pom.xml
+
+      - name: Locate Android SDK 34
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          if [ ! -f "$SDK_ROOT/platforms/android-34/android.jar" ]; then
+            "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34"
+          fi
+          test -s "$SDK_ROOT/platforms/android-34/android.jar"
+
+      - name: Resolve published dependencies from Maven Central
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f ci/pom.xml dependency:copy-dependencies \
+            -DincludeScope=runtime -DoutputDirectory="$GITHUB_WORKSPACE/build-ci/dependencies"
+          test -f build-ci/dependencies/poi-ooxml-5.4.1.jar
+          test -f build-ci/dependencies/poi-scratchpad-5.4.1.jar
+          test -f build-ci/dependencies/pdfbox-android-2.0.27.0.aar
+
+      - name: Extract Android PDFBox classes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/pdfbox
+          unzip -p build-ci/dependencies/pdfbox-android-2.0.27.0.aar classes.jar > build-ci/pdfbox/pdfbox-android-classes.jar
+          test -s build-ci/pdfbox/pdfbox-android-classes.jar
+
+      - name: Compile BYBLACK application classes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-ci/classes
+          CP="$ANDROID_HOME/platforms/android-34/android.jar:build-ci/pdfbox/pdfbox-android-classes.jar"
+          for jar in build-ci/dependencies/*.jar; do CP="$CP:$jar"; done
+          javac --release 8 -cp "$CP" -d build-ci/classes \
+            app/src/com/byblack/office/AssetClassLoader.java \
+            app/src/com/byblack/office/MainActivity.java
+          test -s build-ci/classes/com/byblack/office/MainActivity.class
+          echo "PASS: BYBLACK MainActivity.java and AssetClassLoader.java compile."
+
+      - name: Explain verification scope
+        if: always()
+        shell: bash
+        run: |
+          echo "V4 checks Java compilation against Maven Central dependencies."
+          echo "This is NOT an APK build, on-device test, or third-party license compliance clearance."
+          echo "Local Termux repackaged JARs may differ from published Maven artifacts."
