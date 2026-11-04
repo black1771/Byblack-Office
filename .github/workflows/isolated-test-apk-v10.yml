@@ -132,7 +132,7 @@ jobs:
           "$BT/apksigner" verify --verbose --print-certs build-ci/BYBLACK-Office-V10-TEST.apk
           "$BT/aapt" dump badging build-ci/BYBLACK-Office-V10-TEST.apk | head -n 8
           "$BT/aapt" dump badging build-ci/BYBLACK-Office-V10-TEST.apk > build-ci/apk-badging.txt
-          grep -F "package: name=\x27com.byblack.office.test\x27" build-ci/apk-badging.txt
+          grep -F "com.byblack.office.test" build-ci/apk-badging.txt
       - name: Upload temporary device-test APK
         uses: actions/upload-artifact@v4
         with:
