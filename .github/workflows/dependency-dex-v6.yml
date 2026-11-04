@@ -29,7 +29,7 @@ jobs:
           set -euo pipefail
           SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
           echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
-          "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;34.0.0"
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;36.0.0"
       - name: Download dependencies and extract AAR
         shell: bash
         run: |
@@ -55,7 +55,7 @@ jobs:
           mkdir -p build-ci/dex
           find build-ci/classes -type f -name '*.class' > build-ci/class-files.txt
           jars=(build-ci/dependencies/*.jar build-ci/pdfbox/pdfbox-android-classes.jar)
-          java -Xmx4g -cp "$ANDROID_HOME/build-tools/34.0.0/lib/d8.jar" com.android.tools.r8.D8 \
+          java -Xmx4g -cp "$ANDROID_HOME/build-tools/36.0.0/lib/d8.jar" com.android.tools.r8.D8 \
             --min-api 26 --lib "$ANDROID_HOME/platforms/android-34/android.jar" \
             --output build-ci/dex @build-ci/class-files.txt "${jars[@]}"
           test -s build-ci/dex/classes.dex
